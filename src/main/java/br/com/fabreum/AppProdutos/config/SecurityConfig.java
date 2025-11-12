@@ -1,26 +1,34 @@
 package br.com.fabreum.AppProdutos.config;
 
+import br.com.fabreum.AppProdutos.security.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 
+    private final JwtAuthFilter jwtAuthFilter;
+
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Desativa CSRF temporariamente
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/h2-console/**").permitAll()  // Libera console H2
-                        .requestMatchers("/usuarios/**").permitAll()   // Libera testes temporários
-                        .anyRequest().authenticated()
+                        .requestMatchers("/auth/**").permitAll()      // libera login
+                        .requestMatchers("/h2-console/**").permitAll() // libera H2 console
+                        .anyRequest().authenticated()                 // resto protegido
                 )
-                .headers(headers -> headers.frameOptions(frame -> frame.disable())) // H2 funciona
-                .httpBasic(httpBasic -> {}); // Aqui não dá erro mais
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

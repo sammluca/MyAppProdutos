@@ -34,10 +34,11 @@ public class AuthService {
 
         Usuario usuario = usuarioOpt.get();
 
-        // Compara senha
-        if (!usuario.getPassword().equals(request.getPassword())) {
+        // Compara senha usando BCrypt
+        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
             throw new Exception("Senha inválida");
         }
+
 
         // Gera token JWT
         String token = jwtUtil.gerarToken(usuario.getUsername());

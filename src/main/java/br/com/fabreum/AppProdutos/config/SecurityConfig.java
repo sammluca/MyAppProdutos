@@ -23,11 +23,16 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()      // libera login
-                        .requestMatchers("/h2-console/**").permitAll() // libera H2 console
-                        .anyRequest().authenticated()                 // resto protegido
+                        // libera autenticação e registro
+                        .requestMatchers("/auth/login", "/auth/register").permitAll()
+                        // libera console H2 e Swagger
+                        .requestMatchers("/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // exige autenticação no resto
+                        .anyRequest().authenticated()
                 )
+
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

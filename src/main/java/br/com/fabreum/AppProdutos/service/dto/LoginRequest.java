@@ -1,4 +1,11 @@
 package br.com.fabreum.AppProdutos.service.dto;
 
-public class LoguinRequest {
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class LoginRequest {
+    private String username;
+    private String password;
 }

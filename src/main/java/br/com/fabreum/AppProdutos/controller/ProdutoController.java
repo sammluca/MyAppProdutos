@@ -1,10 +1,13 @@
 package br.com.fabreum.AppProdutos.controller;
 
+import br.com.fabreum.AppProdutos.model.Categoria;
 import br.com.fabreum.AppProdutos.model.Produtos;
+import br.com.fabreum.AppProdutos.repository.CategoriaRepository;
 import br.com.fabreum.AppProdutos.repository.ProdutosRepository;
 import br.com.fabreum.AppProdutos.service.ProdutosService;
 import br.com.fabreum.AppProdutos.service.dto.ProdutoDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,11 +30,21 @@ public class ProdutoController {
     private final ProdutosRepository produtosRepository;
     private final ProdutosService produtosService;
 
+    @Autowired
+    private CategoriaRepository categoriaRepository;
     @PostMapping("produto")
     public ResponseEntity<Produtos> criaProduto(@RequestBody Produtos produto) {
+        // Se veio id da categoria, busca a categoria
+        if (produto.getCategoria() != null && produto.getCategoria().getId() != null) {
+            Categoria categoria = categoriaRepository.findById(produto.getCategoria().getId())
+                    .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+            produto.setCategoria(categoria);
+        }
+
         Produtos saved = produtosRepository.save(produto);
         return ResponseEntity.ok(saved);
     }
+
 
     @GetMapping
     public ResponseEntity<List<Produtos>> listaProdutos() {
@@ -65,9 +78,17 @@ public class ProdutoController {
 
     @PutMapping("atualiza")
     public ResponseEntity<Optional<Produtos>> atualizaProduto(@RequestBody Produtos produto) {
+        // Atualiza categoria se enviada
+        if (produto.getCategoria() != null && produto.getCategoria().getId() != null) {
+            Categoria categoria = categoriaRepository.findById(produto.getCategoria().getId())
+                    .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+            produto.setCategoria(categoria);
+        }
+
         final var produtoExistente = produtosService.atualizaProduto(produto);
         return ResponseEntity.ok(produtoExistente);
     }
+
 
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deletaProduto(@PathVariable Long id) {

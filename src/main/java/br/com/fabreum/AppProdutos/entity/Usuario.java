@@ -23,5 +23,5 @@ public class Usuario {
     private String password;
 
     @Column(nullable = false)
-    private String role = "ROLE_USER"; // adiciona role padrão
+    private String role = "ROLE_CUSTOMER"; // role padrão
 }

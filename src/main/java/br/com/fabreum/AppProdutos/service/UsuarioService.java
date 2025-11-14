@@ -21,23 +21,25 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Lista todos os usuários cadastrados
     public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
     }
 
-    // Busca usuário pelo username
     public Optional<Usuario> buscarPorUsername(String username) {
         return usuarioRepository.findByUsername(username);
     }
 
-    // Salva um novo usuário (ou atualiza se já existir) com senha criptografada
     public Usuario salvarUsuario(Usuario usuario) {
         // Encrypt password if not already encoded
         if (usuario.getPassword() != null && !usuario.getPassword().startsWith("$2a$")) {
             usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         }
+
+        // Garante que role esteja setada
+        if (usuario.getRole() == null || usuario.getRole().isEmpty()) {
+            usuario.setRole("ROLE_CUSTOMER");
+        }
+
         return usuarioRepository.save(usuario);
     }
 }
-

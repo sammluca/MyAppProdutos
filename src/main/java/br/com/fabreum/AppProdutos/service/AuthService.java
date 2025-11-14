@@ -24,7 +24,6 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Authenticate user and generate JWT token
     public LoginResponse login(LoginRequest request) {
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorUsername(request.getUsername());
 
@@ -34,12 +33,12 @@ public class AuthService {
 
         Usuario usuario = usuarioOpt.get();
 
-        // Check password using BCrypt
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
             throw new IllegalArgumentException("Invalid password");
         }
 
-        String token = jwtUtil.gerarToken(usuario.getUsername());
+        // Passa role ao gerar token
+        String token = jwtUtil.gerarToken(usuario.getUsername(), usuario.getRole());
 
         return new LoginResponse(usuario.getUsername(), token);
     }

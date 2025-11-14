@@ -1,9 +1,9 @@
 package br.com.fabreum.AppProdutos.service;
 
-import br.com.fabreum.AppProdutos.service.dto.LoginRequest;
-import br.com.fabreum.AppProdutos.service.dto.LoginResponse;
 import br.com.fabreum.AppProdutos.entity.Usuario;
 import br.com.fabreum.AppProdutos.security.JwtUtil;
+import br.com.fabreum.AppProdutos.service.dto.LoginRequest;
+import br.com.fabreum.AppProdutos.service.dto.LoginResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,23 +24,21 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Autentica usuário e retorna token
-    public LoginResponse login(LoginRequest request) throws Exception {
+    // Authenticate user and generate JWT token
+    public LoginResponse login(LoginRequest request) {
         Optional<Usuario> usuarioOpt = usuarioService.buscarPorUsername(request.getUsername());
 
         if (usuarioOpt.isEmpty()) {
-            throw new Exception("Usuário não encontrado");
+            throw new IllegalArgumentException("User not found");
         }
 
         Usuario usuario = usuarioOpt.get();
 
-        // Compara senha usando BCrypt
+        // Check password using BCrypt
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
-            throw new Exception("Senha inválida");
+            throw new IllegalArgumentException("Invalid password");
         }
 
-
-        // Gera token JWT
         String token = jwtUtil.gerarToken(usuario.getUsername());
 
         return new LoginResponse(usuario.getUsername(), token);

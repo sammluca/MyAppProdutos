@@ -14,50 +14,39 @@ public class EstoqueService {
     private final ProdutosRepository produtosRepository;
     private final AuditoriaService auditoriaService;
 
-    public Produtos adicionarEstoque(Long produtoId, int quantidade) {
-        Optional<Produtos> produtoOpt = produtosRepository.findById(produtoId);
+    public Produtos adicionarEstoque(Long produtoId, int quantidade, String username) {
+        Produtos produto = produtosRepository.findById(produtoId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
-        if (produtoOpt.isEmpty()) {
-            throw new RuntimeException("Produto não encontrado");
-        }
-
-        Produtos produto = produtoOpt.get();
         produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() + quantidade);
-
         Produtos salvo = produtosRepository.save(produto);
 
-        //  Auditoria
+        // Auditoria
         auditoriaService.registrar(
-                "sistema",
-                "ADICIONAR_ESTOQUE",
-                "Adicionado " + quantidade + " unidades ao produto ID " + produtoId
+                username != null ? username : "sistema",
+                "ADD_STOCK",
+                "Added " + quantidade + " units to product ID " + produtoId
         );
 
         return salvo;
     }
 
-    public Produtos removerEstoque(Long produtoId, int quantidade) {
-        Optional<Produtos> produtoOpt = produtosRepository.findById(produtoId);
-
-        if (produtoOpt.isEmpty()) {
-            throw new RuntimeException("Produto não encontrado");
-        }
-
-        Produtos produto = produtoOpt.get();
+    public Produtos removerEstoque(Long produtoId, int quantidade, String username) {
+        Produtos produto = produtosRepository.findById(produtoId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
         if (produto.getQuantidadeEstoque() < quantidade) {
-            throw new RuntimeException("Estoque insuficiente");
+            throw new IllegalArgumentException("Insufficient stock");
         }
 
         produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - quantidade);
-
         Produtos salvo = produtosRepository.save(produto);
 
-        //  Auditoria
+        // Auditoria
         auditoriaService.registrar(
-                "sistema",
-                "REMOVER_ESTOQUE",
-                "Removido " + quantidade + " unidades do produto ID " + produtoId
+                username != null ? username : "sistema",
+                "REMOVE_STOCK",
+                "Removed " + quantidade + " units from product ID " + produtoId
         );
 
         return salvo;

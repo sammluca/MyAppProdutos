@@ -41,4 +41,9 @@ public class Categoria {
     @OneToMany(mappedBy = "categoria")
     @JsonIgnore
     private List<Produtos> produtos;
+
+    // Construtor auxiliar só com nome, útil para testes e criação rápida
+    public Categoria(String nome) {
+        this.nome = nome;
+    }
 }

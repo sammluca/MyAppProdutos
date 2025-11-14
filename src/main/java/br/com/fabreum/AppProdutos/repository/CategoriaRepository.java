@@ -11,4 +11,6 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
 
     // Verifica se já existe categoria com o mesmo nome no mesmo nível
     Optional<Categoria> findByNomeAndCategoriaPaiId(String nome, Long categoriaPaiId);
+
+    Optional<Categoria> findByNome(String nome);
 }

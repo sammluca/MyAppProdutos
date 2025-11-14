@@ -1,6 +1,5 @@
 package br.com.fabreum.AppProdutos.service;
 
-import br.com.fabreum.AppProdutos.model.Auditoria;
 import br.com.fabreum.AppProdutos.model.Categoria;
 import br.com.fabreum.AppProdutos.repository.CategoriaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;

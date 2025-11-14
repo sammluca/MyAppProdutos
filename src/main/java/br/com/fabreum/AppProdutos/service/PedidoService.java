@@ -26,19 +26,18 @@ public class PedidoService {
     private final ProdutosRepository produtosRepository;
     private final AuditoriaService auditoriaService;
 
-
     @Transactional
     public PedidoResponse criarPedido(PedidoRequest pedidoRequest, String username) {
 
         Usuario usuario = usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
 
         List<ItemPedido> itens = pedidoRequest.getItens().stream().map(i -> {
             Produtos produto = produtosRepository.findById(i.getProdutoId())
-                    .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + i.getProdutoId()));
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found: " + i.getProdutoId()));
 
             ItemPedido itemPedido = new ItemPedido();
             itemPedido.setPedido(pedido);
@@ -62,19 +61,18 @@ public class PedidoService {
         // AUDITORIA — pedido criado
         auditoriaService.registrar(
                 username,
-                "CRIAR_PEDIDO",
-                "Pedido ID=" + pedidoSalvo.getId() + " criado com total de R$" + total
+                "CREATE_ORDER",
+                "Order ID=" + pedidoSalvo.getId() + " created with total R$" + total
         );
 
         return mapToResponse(pedidoSalvo);
     }
 
-
     @Transactional(readOnly = true)
     public List<PedidoResponse> listarPedidosPorUsuario(String username) {
 
         Usuario usuario = usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         List<PedidoResponse> lista = pedidoRepository.findAllByUsuario(usuario).stream()
                 .map(this::mapToResponse)
@@ -83,34 +81,32 @@ public class PedidoService {
         // AUDITORIA — listagem
         auditoriaService.registrar(
                 username,
-                "LISTAR_PEDIDOS",
-                "Listou " + lista.size() + " pedidos"
+                "LIST_ORDERS",
+                "Listed " + lista.size() + " orders"
         );
 
         return lista;
     }
 
-
     @Transactional(readOnly = true)
     public PedidoResponse buscarPedidoPorId(Long id, String username) {
 
         Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
         if (!pedido.getUsuario().getUsername().equals(username)) {
-            throw new RuntimeException("Acesso negado");
+            throw new IllegalArgumentException("Access denied");
         }
 
         // AUDITORIA — consulta pedido
         auditoriaService.registrar(
                 username,
-                "CONSULTAR_PEDIDO",
-                "Consultou o pedido ID=" + id
+                "VIEW_ORDER",
+                "Viewed order ID=" + id
         );
 
         return mapToResponse(pedido);
     }
-
 
     private PedidoResponse mapToResponse(Pedido pedido) {
         List<PedidoResponse.ItemResponse> itensResponse = pedido.getItens().stream()

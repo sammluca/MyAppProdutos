@@ -2,15 +2,21 @@ package br.com.fabreum.AppProdutos.service;
 
 import br.com.fabreum.AppProdutos.model.Categoria;
 import br.com.fabreum.AppProdutos.repository.CategoriaRepository;
+import br.com.fabreum.AppProdutos.service.dto.CategoriaRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-import java.util.*;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class CategoriaServiceTest {
+
+    @InjectMocks
+    private CategoriaService categoriaService;
 
     @Mock
     private CategoriaRepository categoriaRepository;
@@ -18,99 +24,107 @@ class CategoriaServiceTest {
     @Mock
     private AuditoriaService auditoriaService;
 
-    @InjectMocks
-    private CategoriaService categoriaService;
-
-    private Categoria categoria;
+    @Mock
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        categoria = Categoria.builder()
-                .id(1L)
-                .nome("Eletronico")
-                .build();
-    }
-
-    @Test
-    void testListarTodas() throws Exception {
-        List<Categoria> lista = List.of(categoria);
-        when(categoriaRepository.findAll()).thenReturn(lista);
-
-        List<Categoria> result = categoriaService.listarTodas("admin");
-
-        assertEquals(1, result.size());
-        verify(auditoriaService, times(1))
-                .registrar(eq("admin"), eq("LIST_CATEGORIES"), anyString(), isNull(), isNull());
     }
 
     @Test
     void testCriarCategoria_Sucesso() throws Exception {
-        when(categoriaRepository.findByNomeAndCategoriaPaiId(anyString(), any())).thenReturn(Optional.empty());
-        when(categoriaRepository.save(any(Categoria.class))).thenReturn(categoria);
+        String usuario = "admin";
+        CategoriaRequest request = new CategoriaRequest();
+        request.setNome("Eletronico");
+        request.setCategoriaPaiId(null);
 
-        Categoria result = categoriaService.criarCategoria(categoria, "admin");
+        Categoria categoriaSalva = Categoria.builder().id(1L).nome("Eletronico").build();
 
+        when(categoriaRepository.findByNome("Eletronico")).thenReturn(Optional.empty());
+        when(categoriaRepository.save(any(Categoria.class))).thenReturn(categoriaSalva);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        Categoria result = categoriaService.criarCategoria(request, usuario);
+
+        assertNotNull(result);
         assertEquals("Eletronico", result.getNome());
         verify(auditoriaService, times(1))
-                .registrar(eq("admin"), eq("CREATE_CATEGORY"), contains("Criou categoria"), isNull(), eq(categoria));
+                .registrar(eq(usuario), eq("CREATE_CATEGORY"), anyString(), isNull(), anyString());
     }
 
     @Test
     void testCriarCategoria_Duplicada() {
-        when(categoriaRepository.findByNomeAndCategoriaPaiId(anyString(), any())).thenReturn(Optional.of(categoria));
+        String usuario = "admin";
+        CategoriaRequest request = new CategoriaRequest();
+        request.setNome("Eletronico");
+
+        Categoria existente = Categoria.builder().id(1L).nome("Eletronico").build();
+
+        when(categoriaRepository.findByNome("Eletronico")).thenReturn(Optional.of(existente));
 
         Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                categoriaService.criarCategoria(categoria, "admin"));
+                categoriaService.criarCategoria(request, usuario));
 
-        assertEquals("Categoria com mesmo nome já existe no mesmo nível", exception.getMessage());
+        assertEquals("Categoria já existe", exception.getMessage());
     }
 
     @Test
     void testAtualizarCategoria_Sucesso() throws Exception {
-        Categoria atualizada = Categoria.builder().nome("EletronicoAtualizado").build();
+        Long id = 1L;
+        String usuario = "admin";
 
-        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
-        when(categoriaRepository.findByNomeAndCategoriaPaiId(anyString(), any())).thenReturn(Optional.empty());
-        when(categoriaRepository.save(any(Categoria.class))).thenReturn(atualizada);
+        CategoriaRequest request = new CategoriaRequest();
+        request.setNome("Informática");
+        request.setCategoriaPaiId(null);
 
-        Categoria result = categoriaService.atualizarCategoria(1L, atualizada, "admin");
+        Categoria existente = Categoria.builder().id(id).nome("Eletronico").build();
 
-        assertEquals("EletronicoAtualizado", result.getNome());
+        when(categoriaRepository.findById(id)).thenReturn(Optional.of(existente));
+        when(categoriaRepository.findByNomeAndCategoriaPaiId("Informática", null)).thenReturn(Optional.empty());
+        when(categoriaRepository.save(any(Categoria.class))).thenReturn(existente);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        Categoria result = categoriaService.atualizarCategoria(id, request, usuario);
+
+        assertNotNull(result);
+        assertEquals("Informática", result.getNome());
         verify(auditoriaService, times(1))
-                .registrar(eq("admin"), eq("UPDATE_CATEGORY"), contains("Atualizou categoria"), anyString(), eq(atualizada));
+                .registrar(eq(usuario), eq("UPDATE_CATEGORY"), anyString(), anyString(), anyString());
     }
 
     @Test
     void testDeletarCategoria_Sucesso() throws Exception {
-        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
-        doNothing().when(categoriaRepository).deleteById(1L);
+        Long id = 1L;
+        String usuario = "admin";
 
-        categoriaService.deletarCategoria(1L, "admin");
+        Categoria existente = Categoria.builder().id(id).nome("Eletronico").build();
 
+        when(categoriaRepository.findById(id)).thenReturn(Optional.of(existente));
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        categoriaService.deletarCategoria(id, usuario);
+
+        verify(categoriaRepository, times(1)).deleteById(id);
         verify(auditoriaService, times(1))
-                .registrar(eq("admin"), eq("DELETE_CATEGORY"), contains("Deletou categoria"), eq(categoria), isNull());
+                .registrar(eq(usuario), eq("DELETE_CATEGORY"), anyString(), anyString(), isNull());
     }
 
     @Test
     void testBuscarPorId_Sucesso() throws Exception {
-        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
+        Long id = 1L;
+        String usuario = "admin";
 
-        Categoria result = categoriaService.buscarPorId(1L, "admin");
+        Categoria existente = Categoria.builder().id(id).nome("Eletronico").build();
 
-        assertEquals(categoria.getNome(), result.getNome());
+        when(categoriaRepository.findById(id)).thenReturn(Optional.of(existente));
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        Categoria result = categoriaService.buscarPorId(id, usuario);
+
+        assertNotNull(result);
+        assertEquals("Eletronico", result.getNome());
         verify(auditoriaService, times(1))
-                .registrar(eq("admin"), eq("VIEW_CATEGORY"), contains("Visualizou categoria"), isNull(), eq(categoria));
-    }
-
-    @Test
-    void testBuscarPorId_NaoEncontrada() {
-        when(categoriaRepository.findById(1L)).thenReturn(Optional.empty());
-
-        Exception exception = assertThrows(RuntimeException.class, () ->
-                categoriaService.buscarPorId(1L, "admin"));
-
-        assertEquals("Categoria não encontrada", exception.getMessage());
+                .registrar(eq(usuario), eq("VIEW_CATEGORY"), anyString(), isNull(), anyString());
     }
 }

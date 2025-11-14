@@ -13,11 +13,11 @@ public class JwtUtil {
     private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final long expiration = 1000 * 60 * 60; // 1 hora
 
-    // Gera token JWT incluindo o role
+    // Gera token JWT com role
     public String gerarToken(String username, String role) {
         return Jwts.builder()
                 .setSubject(username)
-                .claim("role", role)
+                .claim("role", role) // adiciona role
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(secretKey)
@@ -36,12 +36,12 @@ public class JwtUtil {
 
     // Extrai role do token
     public String extrairRole(String token) {
-        return Jwts.parserBuilder()
+        return (String) Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
-                .get("role", String.class);
+                .get("role");
     }
 
     // Valida token

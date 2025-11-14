@@ -9,6 +9,7 @@ import br.com.fabreum.AppProdutos.service.ProdutosService;
 import br.com.fabreum.AppProdutos.service.dto.ProdutoDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class ProdutoController {
     private final AuditoriaService auditoriaService;
 
     @PostMapping("produto")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Produtos> criaProduto(@RequestBody Produtos produto) {
         if (produto.getCategoria() != null && produto.getCategoria().getId() != null) {
             Categoria categoria = categoriaRepository.findById(produto.getCategoria().getId())
@@ -33,7 +35,6 @@ public class ProdutoController {
 
         Produtos saved = produtosRepository.save(produto);
 
-        // Auditoria CREATE
         auditoriaService.registrar(
                 "sistema",
                 "CRIAR_PRODUTO",
@@ -64,6 +65,7 @@ public class ProdutoController {
     }
 
     @PutMapping("atualiza")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Produtos> atualizaProduto(@RequestBody Produtos produto) {
         if (produto.getCategoria() != null && produto.getCategoria().getId() != null) {
             Categoria categoria = categoriaRepository.findById(produto.getCategoria().getId())
@@ -74,7 +76,6 @@ public class ProdutoController {
         Produtos atualizado = produtosService.atualizaProduto(produto)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado para atualizar"));
 
-        // Auditoria UPDATE
         auditoriaService.registrar(
                 "sistema",
                 "ATUALIZAR_PRODUTO",
@@ -85,10 +86,10 @@ public class ProdutoController {
     }
 
     @DeleteMapping("{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletaProduto(@PathVariable Long id) {
         produtosRepository.deleteById(id);
 
-        // Auditoria DELETE
         auditoriaService.registrar(
                 "sistema",
                 "DELETAR_PRODUTO",

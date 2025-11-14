@@ -4,6 +4,7 @@ import br.com.fabreum.AppProdutos.model.Categoria;
 import br.com.fabreum.AppProdutos.repository.CategoriaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,20 +16,21 @@ public class CategoriaController {
     @Autowired
     private CategoriaRepository categoriaRepository;
 
-    // Listar todas categorias
+    // Listar todas categorias — público para qualquer usuário autenticado
     @GetMapping
     public ResponseEntity<List<Categoria>> listarCategorias() {
         return ResponseEntity.ok(categoriaRepository.findAll());
     }
 
-    // Criar nova categoria
+    // Criar nova categoria — apenas ADMIN
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Categoria> criarCategoria(@RequestBody Categoria categoria) {
         Categoria saved = categoriaRepository.save(categoria);
         return ResponseEntity.status(201).body(saved);
     }
 
-    // Buscar categoria por id
+    // Buscar categoria por id — público para qualquer usuário autenticado
     @GetMapping("/{id}")
     public ResponseEntity<Categoria> buscarPorId(@PathVariable Long id) {
         Categoria categoria = categoriaRepository.findById(id)
@@ -36,8 +38,9 @@ public class CategoriaController {
         return ResponseEntity.ok(categoria);
     }
 
-    // Atualizar categoria
+    // Atualizar categoria — apenas ADMIN
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Categoria> atualizarCategoria(@PathVariable Long id,
                                                         @RequestBody Categoria categoriaAtualizada) {
         Categoria categoria = categoriaRepository.findById(id)
@@ -48,8 +51,9 @@ public class CategoriaController {
         return ResponseEntity.ok(categoria);
     }
 
-    // Deletar categoria
+    // Deletar categoria — apenas ADMIN
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletarCategoria(@PathVariable Long id) {
         categoriaRepository.deleteById(id);
         return ResponseEntity.noContent().build();

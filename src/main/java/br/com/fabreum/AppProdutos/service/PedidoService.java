@@ -8,7 +8,6 @@ import br.com.fabreum.AppProdutos.repository.PedidoRepository;
 import br.com.fabreum.AppProdutos.repository.ProdutosRepository;
 import br.com.fabreum.AppProdutos.repository.UsuarioRepository;
 import br.com.fabreum.AppProdutos.service.dto.PedidoRequest;
-import br.com.fabreum.AppProdutos.service.dto.PedidoRequest;
 import br.com.fabreum.AppProdutos.service.dto.PedidoResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,9 +24,12 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProdutosRepository produtosRepository;
+    private final AuditoriaService auditoriaService;
+
 
     @Transactional
     public PedidoResponse criarPedido(PedidoRequest pedidoRequest, String username) {
+
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -49,7 +51,6 @@ public class PedidoService {
 
         pedido.setItens(itens);
 
-        // Calcula o total
         BigDecimal total = itens.stream()
                 .map(i -> i.getPrecoUnitario().multiply(BigDecimal.valueOf(i.getQuantidade())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -58,21 +59,41 @@ public class PedidoService {
 
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
+        // AUDITORIA — pedido criado
+        auditoriaService.registrar(
+                username,
+                "CRIAR_PEDIDO",
+                "Pedido ID=" + pedidoSalvo.getId() + " criado com total de R$" + total
+        );
+
         return mapToResponse(pedidoSalvo);
     }
 
+
     @Transactional(readOnly = true)
     public List<PedidoResponse> listarPedidosPorUsuario(String username) {
+
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        return pedidoRepository.findAllByUsuario(usuario).stream()
+        List<PedidoResponse> lista = pedidoRepository.findAllByUsuario(usuario).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+
+        // AUDITORIA — listagem
+        auditoriaService.registrar(
+                username,
+                "LISTAR_PEDIDOS",
+                "Listou " + lista.size() + " pedidos"
+        );
+
+        return lista;
     }
+
 
     @Transactional(readOnly = true)
     public PedidoResponse buscarPedidoPorId(Long id, String username) {
+
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
 
@@ -80,8 +101,16 @@ public class PedidoService {
             throw new RuntimeException("Acesso negado");
         }
 
+        // AUDITORIA — consulta pedido
+        auditoriaService.registrar(
+                username,
+                "CONSULTAR_PEDIDO",
+                "Consultou o pedido ID=" + id
+        );
+
         return mapToResponse(pedido);
     }
+
 
     private PedidoResponse mapToResponse(Pedido pedido) {
         List<PedidoResponse.ItemResponse> itensResponse = pedido.getItens().stream()

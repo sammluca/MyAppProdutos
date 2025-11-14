@@ -17,14 +17,19 @@ public class ProdutosService {
 
     public Optional<Produtos> atualizaProduto(Produtos produto) {
         log.info("Atualizando produto: {}", produto);
-        final var produtoExistente = produtosRepository.findById(produto.getId());
-        produtoExistente.ifPresent(p -> {
-            produto.setCodigoBarras(p.getCodigoBarras());
-            produto.setNome(p.getNome());
-            produto.setPreco(p.getPreco());
-            produtosRepository.saveAndFlush(produto);
-        });
-        return produtoExistente;
+
+        return produtosRepository.findById(produto.getId())
+                .map(p -> {
+                    // mantém dados que NÃO devem ser alterados pelo cliente
+                    produto.setCodigoBarras(p.getCodigoBarras());
+
+                    // mantém a categoria existente se a nova vier null
+                    if (produto.getCategoria() == null) {
+                        produto.setCategoria(p.getCategoria());
+                    }
+
+                    return produtosRepository.saveAndFlush(produto);
+                });
     }
 
 }

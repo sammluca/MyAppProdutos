@@ -2,16 +2,17 @@ package br.com.fabreum.AppProdutos.service;
 
 import br.com.fabreum.AppProdutos.model.Produtos;
 import br.com.fabreum.AppProdutos.repository.ProdutosRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class EstoqueService {
 
-    @Autowired
-    private ProdutosRepository produtosRepository;
+    private final ProdutosRepository produtosRepository;
+    private final AuditoriaService auditoriaService;
 
     public Produtos adicionarEstoque(Long produtoId, int quantidade) {
         Optional<Produtos> produtoOpt = produtosRepository.findById(produtoId);
@@ -23,7 +24,16 @@ public class EstoqueService {
         Produtos produto = produtoOpt.get();
         produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() + quantidade);
 
-        return produtosRepository.save(produto);
+        Produtos salvo = produtosRepository.save(produto);
+
+        //  Auditoria
+        auditoriaService.registrar(
+                "sistema",
+                "ADICIONAR_ESTOQUE",
+                "Adicionado " + quantidade + " unidades ao produto ID " + produtoId
+        );
+
+        return salvo;
     }
 
     public Produtos removerEstoque(Long produtoId, int quantidade) {
@@ -41,6 +51,15 @@ public class EstoqueService {
 
         produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - quantidade);
 
-        return produtosRepository.save(produto);
+        Produtos salvo = produtosRepository.save(produto);
+
+        //  Auditoria
+        auditoriaService.registrar(
+                "sistema",
+                "REMOVER_ESTOQUE",
+                "Removido " + quantidade + " unidades do produto ID " + produtoId
+        );
+
+        return salvo;
     }
 }

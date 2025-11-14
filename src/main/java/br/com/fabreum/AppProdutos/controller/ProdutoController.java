@@ -4,6 +4,7 @@ import br.com.fabreum.AppProdutos.model.Categoria;
 import br.com.fabreum.AppProdutos.model.Produtos;
 import br.com.fabreum.AppProdutos.repository.CategoriaRepository;
 import br.com.fabreum.AppProdutos.repository.ProdutosRepository;
+import br.com.fabreum.AppProdutos.service.AuditoriaService;
 import br.com.fabreum.AppProdutos.service.ProdutosService;
 import br.com.fabreum.AppProdutos.service.dto.ProdutoDto;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class ProdutoController {
     private final ProdutosRepository produtosRepository;
     private final ProdutosService produtosService;
     private final CategoriaRepository categoriaRepository;
+    private final AuditoriaService auditoriaService;
 
     @PostMapping("produto")
     public ResponseEntity<Produtos> criaProduto(@RequestBody Produtos produto) {
@@ -30,18 +32,28 @@ public class ProdutoController {
         }
 
         Produtos saved = produtosRepository.save(produto);
+
+        // Auditoria CREATE
+        auditoriaService.registrar(
+                "sistema",
+                "CRIAR_PRODUTO",
+                "Produto criado ID: " + saved.getId()
+        );
+
         return ResponseEntity.ok(saved);
     }
 
     @GetMapping
     public ResponseEntity<List<Produtos>> listaProdutos() {
-        return ResponseEntity.ok(produtosRepository.findAll());
+        List<Produtos> lista = produtosRepository.findAll();
+        return ResponseEntity.ok(lista);
     }
 
     @GetMapping("{id}")
     public ResponseEntity<Produtos> listaProdutoPorId(@PathVariable Long id) {
         Produtos produto = produtosRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+
         return ResponseEntity.ok(produto);
     }
 
@@ -62,14 +74,28 @@ public class ProdutoController {
         Produtos atualizado = produtosService.atualizaProduto(produto)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado para atualizar"));
 
+        // Auditoria UPDATE
+        auditoriaService.registrar(
+                "sistema",
+                "ATUALIZAR_PRODUTO",
+                "Produto atualizado ID: " + atualizado.getId()
+        );
+
         return ResponseEntity.ok(atualizado);
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deletaProduto(@PathVariable Long id) {
         produtosRepository.deleteById(id);
+
+        // Auditoria DELETE
+        auditoriaService.registrar(
+                "sistema",
+                "DELETAR_PRODUTO",
+                "Produto deletado ID: " + id
+        );
+
         return ResponseEntity.noContent().build();
     }
 
 }
-

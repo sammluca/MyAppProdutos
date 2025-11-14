@@ -22,7 +22,7 @@ public class PedidoController {
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<PedidoResponse> criarPedido(@RequestBody PedidoRequest pedidoRequest,
-                                                      Authentication authentication) {
+                                                      Authentication authentication) throws Exception {
         String username = authentication.getName();
         PedidoResponse response = pedidoService.criarPedido(pedidoRequest, username);
         return ResponseEntity.status(201).body(response);
@@ -41,7 +41,7 @@ public class PedidoController {
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<PedidoResponse> buscarPedidoPorId(@PathVariable Long id,
-                                                            Authentication authentication) {
+                                                            Authentication authentication) throws Exception {
         String username = authentication.getName();
         PedidoResponse pedido = pedidoService.buscarPedidoPorId(id, username);
         return ResponseEntity.ok(pedido);

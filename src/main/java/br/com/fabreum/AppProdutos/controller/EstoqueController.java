@@ -1,11 +1,14 @@
 package br.com.fabreum.AppProdutos.controller;
 
+import br.com.fabreum.AppProdutos.model.InventoryTransaction;
 import br.com.fabreum.AppProdutos.model.Produtos;
 import br.com.fabreum.AppProdutos.service.EstoqueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/estoque")
@@ -17,7 +20,7 @@ public class EstoqueController {
     @PutMapping("/adicionar/{idProduto}")
     public ResponseEntity<Produtos> adicionarEstoque(@PathVariable Long idProduto,
                                                      @RequestParam int quantidade,
-                                                     Authentication authentication) {
+                                                     Authentication authentication) throws Exception {
         String username = authentication != null ? authentication.getName() : "sistema";
         Produtos produtoAtualizado = estoqueService.adicionarEstoque(idProduto, quantidade, username);
         return ResponseEntity.ok(produtoAtualizado);
@@ -26,9 +29,15 @@ public class EstoqueController {
     @PutMapping("/remover/{idProduto}")
     public ResponseEntity<Produtos> removerEstoque(@PathVariable Long idProduto,
                                                    @RequestParam int quantidade,
-                                                   Authentication authentication) {
+                                                   Authentication authentication) throws Exception {
         String username = authentication != null ? authentication.getName() : "sistema";
         Produtos produtoAtualizado = estoqueService.removerEstoque(idProduto, quantidade, username);
         return ResponseEntity.ok(produtoAtualizado);
+    }
+
+    @GetMapping("/transacoes/{idProduto}")
+    public ResponseEntity<List<InventoryTransaction>> listarTransacoes(@PathVariable Long idProduto) {
+        List<InventoryTransaction> transacoes = estoqueService.listarTransacoes(idProduto);
+        return ResponseEntity.ok(transacoes);
     }
 }

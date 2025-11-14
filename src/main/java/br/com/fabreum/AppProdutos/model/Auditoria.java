@@ -17,12 +17,20 @@ public class Auditoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String usuario;          // usuário logado que fez a ação
-    private String acao;             // nome da ação: "CRIAR_PEDIDO", "ATUALIZAR_PRODUTO", etc.
-    private String detalhe;          // texto livre descrevendo o que aconteceu
+    private String usuario;      // usuário logado
+    private String acao;         // ex.: CREATE_CATEGORY, UPDATE_PRODUCT
+    private String detalhe;      // texto livre explicativo
+
+    @Lob
+    private String beforeJson;   // estado antes da alteração em JSON
+
+    @Lob
+    private String afterJson;    // estado depois da alteração em JSON
+
+    private LocalDateTime dataHora;
+
     @PrePersist
     public void prePersist() {
         this.dataHora = LocalDateTime.now();
     }
-    private LocalDateTime dataHora = LocalDateTime.now();
 }

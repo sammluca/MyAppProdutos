@@ -1,6 +1,7 @@
 package br.com.fabreum.AppProdutos.model;
 
 import br.com.fabreum.AppProdutos.entity.Usuario;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -29,5 +30,6 @@ public class Pedido {
     private BigDecimal total = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<ItemPedido> itens;
 }

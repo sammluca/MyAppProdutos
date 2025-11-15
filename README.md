@@ -1,367 +1,220 @@
-# ✅ **Sugestões de Evolução — Regras de Negócio e Melhorias (para os alunos)**
+AppProdutos API
 
-Este projeto foi criado como introdução ao Java e pode ser ampliado com novas regras de negócio, entidades, validações e funcionalidades.
-As sugestões abaixo servem como **exercícios guiados** para aprimorar o domínio de API REST, Java, Spring Boot, autenticação, modelagem de dados e boas práticas.
+Sistema de gerenciamento de produtos, categorias, estoque, pedidos e auditoria.
 
-As funcionalidades estão organizadas por prioridade e dificuldade.
+Autenticação: JWT Bearer Token
+Todos os endpoints sensíveis exigem token no header:
+Authorization: Bearer <token>
 
----
 
-## ✅ 1. Autenticação e Autorização
+1. Autenticação e Usuários
+Criar novo usuário
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+POST /auth/register
 
-Use o repositório `Login-BE` como referência para implementar autenticação via JWT e controle de acesso.
+Descrição: Cria um usuário no sistema.
 
-### Requisitos:
+Body:
 
-* Implementar login e obtenção de token (JWT).
-* Criar papéis (roles):
+{
+  "username": "admin",
+  "password": "123456",
+  "role": "ROLE_ADMIN"
+}
 
-  * `ADMIN` – pode criar/editar/deletar produtos, categorias e promoções.
-  * `SELLER` – pode cadastrar/editar produtos próprios.
-  * `CUSTOMER` – pode visualizar catálogo, criar carrinho e pedidos.
-* Proteger endpoints sensíveis com `@PreAuthorize`.
 
-### Endpoints sugeridos:
+Roles possíveis: ROLE_ADMIN, ROLE_SELLER, ROLE_CUSTOMER
 
-```
-POST /auth/login  
-POST /auth/refresh  
-GET  /auth/me
-```
+Login do usuário
 
----
+POST /auth/login
 
-## ✅ 2. Categorias e Organização do Catálogo
+Descrição: Autentica usuário e retorna token JWT.
 
-**Prioridade:** Alta
-**Dificuldade:** Baixa
+Body:
 
-### Regras:
+{
+  "username": "nome_do_usuario",
+  "password": "senha"
+}
 
-* Todo produto deve pertencer a uma categoria.
-* Categorias podem ter hierarquia (pai → filho).
-* Nome de categoria deve ser único no mesmo nível.
 
-### Endpoints sugeridos:
+Resposta exemplo:
 
-```
-GET    /categories
-POST   /categories
-PUT    /categories/{id}
-DELETE /categories/{id}
-```
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
 
-### Validações:
+Listar todos usuários
 
-* Nome obrigatório.
-* Proibir duplicidade.
+GET /usuarios
 
----
+Roles: ADMIN
 
-## ✅ 3. Controle de Estoque (Inventário)
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+2. Categorias
+Adicionar nova categoria matriz
 
-### Regras:
+POST /categorias
 
-* Cada ajuste de estoque gera um registro de `InventoryTransaction`.
-* A venda/pedido deve diminuir o estoque.
-* Impedir vendas com estoque insuficiente.
-* Notificar quando um produto atingir estoque mínimo (pode ser apenas flag).
+Roles: ADMIN
 
-### Tipos de transação:
+Body:
 
-* Entrada (compra/fornecedor)
-* Saída (venda)
-* Ajuste
-* Devolução
+{
+  "nome": "Eletrônicos"
+}
 
-### Endpoints sugeridos:
+Adicionar nova categoria filho
 
-```
-POST /inventory/{productId}/add
-POST /inventory/{productId}/remove
-GET  /inventory/{productId}
-```
+POST /categorias
 
----
+Roles: ADMIN
 
-## ✅ 4. Carrinho de Compras
+Body:
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+{
+  "nome": "Celulares",
+  "categoriaPai": { "id": 1 }
+}
 
-### Regras:
+Listar categorias
 
-* Usuário autenticado pode ter apenas 1 carrinho ativo.
-* Itens têm `priceSnapshot` (preço do momento).
-* Atualizações recalculam totais.
+GET /categorias
 
-### Endpoints sugeridos:
+Roles: ADMIN, SELLER, CUSTOMER
 
-```
-GET  /cart
-POST /cart/items
-PUT  /cart/items/{itemId}
-DELETE /cart/items/{itemId}
-```
+3. Produtos
+Adicionar novo produto
 
----
+POST /v1/produtos/produto
 
-## ✅ 5. Pedidos (Orders)
+Roles: ADMIN, SELLER
 
-**Prioridade:** Alta
-**Dificuldade:** Média
+Body:
 
-### Regras:
+{
+  "nome": "Mouse Gamer",
+  "preco": 150.00,
+  "quantidadeEstoque": 10,
+  "categoria": { "id": 1 }
+}
 
-* Carrinho → Pedido (checkout).
-* Status do pedido:
+Listar todos os produtos
 
-  * `CREATED`
-  * `PAID`
-  * `SHIPPED`
-  * `DELIVERED`
-  * `CANCELLED`
-* Cancelamento permitido somente em `CREATED` ou `PAID`.
+GET /v1/produtos/
 
-### Endpoints sugeridos:
+Roles: ADMIN, SELLER, CUSTOMER
 
-```
-POST /orders
-GET  /orders/{id}
-POST /orders/{id}/cancel
-```
+Atualizar produto / Estoque
 
----
+PUT /v1/produtos/atualiza
 
-## ✅ 6. Promoções e Cupons
+Roles: ADMIN, SELLER
 
-**Prioridade:** Média
-**Dificuldade:** Média
+Body:
 
-### Tipos:
+{
+  "id": 1,
+  "nome": "Mouse Gamer RGB",
+  "preco": 200.00,
+  "quantidadeEstoque": 20,
+  "categoria": { "id": 1 }
+}
 
-* Desconto percentual (%)
-* Desconto fixo (R$)
-* Promoção por categoria ou produto
-* Cupom válido por período
-* Cupom com limite de uso
+Obter produto DTO por ID
 
-### Validações:
+GET /v1/produtos/dto/{id}
 
-* Cupom expirado → rejeitar
-* Cupom já utilizado pelo usuário → rejeitar
-* Cupom sem relação com produtos do carrinho → rejeitar
+Roles: ADMIN, SELLER, CUSTOMER
 
-### Endpoints:
+4. Controle de Estoque
+Adicionar estoque
 
-```
-POST /promotions
-POST /coupons/apply
-```
+PUT /estoque/adicionar/{idProduto}?quantidade=10
 
----
+Roles: ADMIN
 
-## ✅ 7. Reviews e Avaliações
+Remover estoque
 
-**Prioridade:** Baixa
-**Dificuldade:** Baixa
+PUT /estoque/remover/{idProduto}?quantidade=2
 
-### Regras:
+Roles: ADMIN
 
-* Apenas quem comprou pode avaliar.
-* Limite de 1 avaliação por produto por pedido.
-* Recalcular média a cada novo review.
+5. Pedidos
+Criar pedido
 
-### Endpoints:
+POST /pedidos
 
-```
-POST /reviews
-GET  /reviews/product/{productId}
-```
+Roles: CUSTOMER
 
----
+Body exemplo 1:
 
-## ✅ 8. Auditoria (Audit Log)
+{
+  "itens": [
+    { "produtoId": 1, "quantidade": 1 },
+    { "produtoId": 2, "quantidade": 0 }
+  ]
+}
 
-**Prioridade:** Média
-**Dificuldade:** Baixa
 
-### Regras:
+Body exemplo 2:
 
-* Registrar:
+{
+  "itens": [
+    { "produtoId": 1, "quantidade": 3 }
+  ]
+}
 
-  * quem criou/alterou/deletou
-  * data e hora
-  * antes e depois da alteração (JSON)
-* Auditoria deve ser imutável.
+Listar pedidos do usuário logado
 
-### Endpoints:
+GET /pedidos
 
-```
-GET /audit?entity=Product
-```
+Roles: CUSTOMER
 
----
-
-## ✅ 9. Relatórios e Métricas
-
-**Prioridade:** Baixa
-**Dificuldade:** Média
-
-### Exemplos:
-
-* Produtos mais vendidos.
-* Faturamento por período.
-* Produtos com estoque baixo.
-* Promoções mais utilizadas.
-
-### Endpoints:
-
-```
-GET /reports/sales
-GET /reports/top-products
-GET /reports/low-stock
-```
-
----
-
-# ✅ 10. Novas Entidades Sugeridas
-
-```text
-Product
-- id
-- name
-- description
-- sku
-- price
-- costPrice
-- categoryId
-- stockQuantity
-- active
-- createdAt
-- updatedAt
+Buscar pedido por ID
 
-Category
-- id
-- name
-- parentId
-- createdAt
-- updatedAt
+GET /pedidos/{id}
 
-InventoryTransaction
-- id
-- productId
-- delta
-- reason
-- referenceId
-- createdBy
-- createdAt
+Roles: CUSTOMER, ADMIN
 
-Cart
-- id
-- userId
-- status
-
-CartItem
-- id
-- cartId
-- productId
-- quantity
-- priceSnapshot
-
-Order
-- id
-- userId
-- total
-- discount
-- freight
-- status
-- createdAt
-- address
-
-OrderItem
-- id
-- orderId
-- productId
-- quantity
-- priceSnapshot
-
-Promotion
-- id
-- code
-- type
-- value
-- validFrom
-- validTo
-- usageLimit
-- usedCount
-- applicableTo
-
-Review
-- id
-- productId
-- userId
-- rating
-- comment
-- createdAt
-
-AuditLog
-- id
-- entityType
-- entityId
-- action
-- beforeJson
-- afterJson
-- who
-- when
-```
-
----
-
-# ✅ 11. Tarefas / Exercícios Práticos para os Alunos
-
-## 🟦 **Básico (1–2 horas)**
-
-* Criar entidade Categoria.
-* Associar Produto → Categoria.
-* Implementar busca de produtos por nome/categoria.
-* Validar dados básicos (preço > 0, nome obrigatório).
-
-## 🟩 **Intermediário (4–8 horas)**
-
-* Implementar autenticação (baseado no Login-BE).
-* Criar carrinho de compras.
-* Controlar estoque com `InventoryTransaction`.
-
-## 🟧 **Avançado (8–20 horas)**
-
-* Finalizar fluxo completo de pedidos.
-* Criar sistema de cupons e promoções.
-* Implementar reviews vinculados ao pedido.
-* Criar testes unitários e de integração.
-
-## 🟥 **Desafios bônus**
-
-* Multi-seller (cada vendedor gerencia seus produtos).
-* Notificações (e-mail ou webhook) ao mudar status do pedido.
-* Agendamento (Scheduler) para alertas de estoque baixo.
-* Implementar caching (Redis) para catálogo.
-
----
-
-# ✅ 12. Critérios de Aceite
-
-* Endpoints documentados (OpenAPI/Swagger ou README).
-* Todas as validações retornam mensagens claras.
-* Rejeitar operações inconsistentes (ex.: vender sem estoque).
-* Testes unitários cobrindo regras principais.
-* Endpoints sensíveis protegidos com roles.
-* Tabelas criadas com migrations (Flyway/Liquibase).
-* Código organizado, coeso e seguindo boas práticas.
-Só pedir!
+6. Auditoria
+Consultar logs
+
+GET /auditoria
+
+Descrição: Retorna histórico de alterações (create/update/delete) de qualquer entidade.
+
+Roles: ADMIN
+
+Exemplo resposta:
+
+[
+  {
+    "id": 1,
+    "entityType": "Produto",
+    "entityId": 1,
+    "action": "CREATE",
+    "beforeJson": null,
+    "afterJson": "{\"id\":1,\"nome\":\"Mouse Gamer\",\"preco\":150.0}",
+    "who": "admin",
+    "when": "2025-11-14T15:20:00"
+  }
+]
+
+
+Notas:
+
+Todos os endpoints sensíveis exigem autenticação com token JWT.
+
+Roles definem permissões:
+
+ADMIN – total controle.
+
+SELLER – gerencia seus produtos.
+
+CUSTOMER – apenas visualiza e realiza pedidos.
+
+Operações que quebrariam regras (ex.: estoque insuficiente) retornam mensagens de erro claras.
+
+Todas as alterações de dados são registradas no log de auditoria.

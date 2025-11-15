@@ -74,8 +74,8 @@ Roles: ADMIN
 Body:
 
 {
-  "nome": "Celulares",
-  "categoriaPai": { "id": 1 }
+  "nome": "Notebooks",
+  "categoriaPaiId": 10
 }
 
 Listar categorias
